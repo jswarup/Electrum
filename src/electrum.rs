@@ -226,8 +226,7 @@ fn electrum_main() {
             Ok(num) => num,
             Err(_) => continue,
         };
-
-//            .expect("Please type a number!"); 
+ 
         println!("You guessed: {}", guess);
         
         match guess.cmp(&secret_number) {

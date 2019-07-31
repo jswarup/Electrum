@@ -6,7 +6,7 @@ edition = "2018"
 
 [lib]
 crate-type = ["staticlib"]
-path = "source/electrum.rs"
+path = "src/electrum.rs"
 
 [dependencies]
 rand = "0.3.14"
