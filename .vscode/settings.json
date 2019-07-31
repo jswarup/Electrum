@@ -1,0 +1,13 @@
+{
+    "terminal.integrated.fontSize": 14,
+    "terminal.integrated.rendererType": "canvas",
+    "workbench.panel.defaultLocation": "right",
+    "workbench.colorCustomizations" : { 
+        //"terminalCursor.background": "#ff0000",
+        //"terminalCursor.foreground": "#ffffff",
+        //"terminal.selectionBackground": "#880000",
+        "terminal.foreground": "#ffffff",
+        "terminal.background": "#000000"
+    }
+}
+
