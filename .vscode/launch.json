@@ -9,7 +9,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/electrum.exe",
-            "args": [],
+            "args": [ "-a 1 -b 1" ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

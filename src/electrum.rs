@@ -9,7 +9,8 @@ use std::io;
 use rand::Rng;
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::fmt::Display;
+use std::fmt::Display; 
+use std::io::Read;
 
 //------------------------------------------------------------------------------------------------------------------------------
 
@@ -116,9 +117,25 @@ fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-fn electrum_main() {
-    let  r;
+fn read_contents( filename: String) -> Result< Vec<u8>, Box<dyn std::error::Error>> 
+{ 
+    let mut     file = std::fs::File::open( filename)?;
+    let         len = file.metadata().map(|m| m.len() as usize + 1).unwrap_or(0);
+    let mut     bytes = Vec::with_capacity( len); 
+    let         fsize = file.read_to_end( &mut bytes)?;
+    Ok(bytes)
+}
+ 
+//------------------------------------------------------------------------------------------------------------------------------
 
+fn electrum_main( args: &Vec<String>) {
+    println!("args: {:#?}", args);
+
+    let     bytes = read_contents( String::from( "Cargo1.toml")).unwrap_or_else(  |err| { 
+                println!( "Fail {}", err); 
+                std::process::exit(1);
+            });
+    let     r;
     {
         let x = 5;
         r = x;
@@ -239,10 +256,12 @@ fn electrum_main() {
         }
     }
 }
+
 //------------------------------------------------------------------------------------------------------------------------------
 
 fn main() {
-    electrum_main();
+    let args: Vec<String> = std::env::args().collect();
+    electrum_main( &args);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -255,7 +274,8 @@ mod tests {
 
 #[test]
 fn call_test(){
-    electrum_main();
+    let         args: Vec<String>  = Vec::new(); 
+    electrum_main( &args);
     assert!(true);
 }
 
