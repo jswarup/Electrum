@@ -6,35 +6,117 @@
 //------------------------------------------------------------------------------------------------------------------------------
 
 use std::io;
-use rand::Rng;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::Display; 
 use std::io::Read;
 use std::ops::Deref;
-use std::sync::{Mutex, Arc};
-use std::thread; 
+use std::sync::{Mutex, Arc, mpsc};
+use std::thread;  
+use rand::Rng;
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+pub trait Draw {
+    fn draw(&self);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+pub struct Button {
+    pub width: u32,
+    pub height: u32,
+    pub label: String,
+}
+
+impl Draw for Button {
+    fn draw(&self) {
+        // code to actually draw a button
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+struct SelectBox {
+    width: u32,
+    height: u32,
+    options: Vec<String>,
+}
+
+impl Draw for SelectBox {
+    fn draw(&self) {
+        // code to actually draw a select box
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+pub struct Screen {
+    pub components: Vec<Box<dyn Draw>>,
+}
+
+impl Screen {
+    pub fn run(&self) {
+        for component in self.components.iter() {
+            component.draw();
+        }
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+fn test_gui() {
+    let screen = Screen {
+        components: vec![
+            Box::new(SelectBox {
+                width: 75,
+                height: 10,
+                options: vec![
+                    String::from("Yes"),
+                    String::from("Maybe"),
+                    String::from("No")
+                ],
+            }),
+            Box::new(Button {
+                width: 50,
+                height: 10,
+                label: String::from("OK"),
+            }),
+        ],
+    };
+
+    screen.run();
+}
 
 //------------------------------------------------------------------------------------------------------------------------------
 
 fn test_thread() {
     let         counter = Arc::new( Mutex::new(0));
     let mut     handles = vec![];
+    let mut     rx_channels = vec![];
 
-    for _ in 0..10 {
+    for i in 0..10 {
         let     counter = Arc::clone( &counter);
+        let     (tx, rx) = mpsc::channel();
+        rx_channels.push( rx);
         let     handle = thread::spawn( move || {
             let mut num = counter.lock().unwrap();
-
+            let     val = i;
+            tx.send(val).unwrap();
             *num += 1;
         });
         handles.push(handle);
     }
 
+    for i in 0..10 {
+        let    rx = &rx_channels[ i];
+        println!("{:?}", rx.recv().unwrap());
+    }
+    
+    
     for handle in handles {
         handle.join().unwrap();
     }
-
     println!("Result: {}", *counter.lock().unwrap());
 }
 
@@ -205,6 +287,7 @@ impl<T> Deref for MyBox<T> {
 fn electrum_main( args: &Vec<String>) {
     println!("args: {:#?}", args);
 
+    test_gui();
     test_thread();
 
     let mut num = 5;
