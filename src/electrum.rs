@@ -11,6 +11,32 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::Display; 
 use std::io::Read;
+use std::ops::Deref;
+use std::sync::{Mutex, Arc};
+use std::thread; 
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+fn test_thread() {
+    let         counter = Arc::new( Mutex::new(0));
+    let mut     handles = vec![];
+
+    for _ in 0..10 {
+        let     counter = Arc::clone( &counter);
+        let     handle = thread::spawn( move || {
+            let mut num = counter.lock().unwrap();
+
+            *num += 1;
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    println!("Result: {}", *counter.lock().unwrap());
+}
 
 //------------------------------------------------------------------------------------------------------------------------------
 
@@ -125,11 +151,72 @@ fn read_contents( filename: String) -> Result< Vec<u8>, Box<dyn std::error::Erro
     let         fsize = file.read_to_end( &mut bytes)?;
     Ok(bytes)
 }
- 
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+struct Cacher<T> where T: Fn(u32) -> u32
+{
+    calculation: T,
+    value: Option<u32>,
+}
+
+impl<T> Cacher<T>
+    where T: Fn(u32) -> u32
+{
+    fn new(calculation: T) -> Cacher<T> {
+        Cacher {
+            calculation,
+            value: None,
+        }
+    }
+
+    fn value(&mut self, arg: u32) -> u32 {
+        match self.value {
+            Some(v) => v,
+            None => {
+                let v = (self.calculation)(arg);
+                self.value = Some(v);
+                v
+            },
+        }
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+struct MyBox<T>( T);
+
+
+impl<T> MyBox<T> {
+    fn  new(x: T) -> MyBox<T> {
+        MyBox(x)
+    }
+}
+
+impl<T> Deref for MyBox<T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        &self.0
+    }
+}
 //------------------------------------------------------------------------------------------------------------------------------
 
 fn electrum_main( args: &Vec<String>) {
     println!("args: {:#?}", args);
+
+    test_thread();
+
+    let mut num = 5;
+
+    let r1 = &num as *const i32;
+    let r2 = &mut num as *mut i32;
+    unsafe {
+        println!("r1 is: {}", *r1);
+        println!("r2 is: {}", *r2);
+    }
+    let     b = Box::new(5);
+    println!("b = {}", *b);
 
     let     bytes = read_contents( String::from( "Cargo1.toml")).unwrap_or_else(  |err| { 
                 println!( "Fail {}", err); 
@@ -143,17 +230,17 @@ fn electrum_main( args: &Vec<String>) {
 
     println!("r: {}", r);
 
-    let number_list = vec![34, 50, 25, 100, 65];
+    let     number_list = vec![34, 50, 25, 100, 65];
 
-    let result = largest(&number_list);
+    let     result = largest(&number_list);
     println!("The largest number is {}", result);
 
-    let char_list = vec!['y', 'm', 'a', 'q'];
+    let     char_list = vec!['y', 'm', 'a', 'q'];
 
-    let result = largest(&char_list);
+    let     result = largest(&char_list);
     println!("The largest char is {}", result);
 
-    let tweet = Tweet {
+    let     tweet = Tweet {
         username: String::from("horse_ebooks"),
         content: String::from("of course, as you probably already know, people"),
         reply: false,
@@ -277,6 +364,18 @@ fn call_test(){
     let         args: Vec<String>  = Vec::new(); 
     electrum_main( &args);
     assert!(true);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+#[test]
+fn call_with_different_values() {
+    let mut c = Cacher::new(|a| a);
+
+    let v1 = c.value(1);
+    let v2 = c.value(2);
+
+    assert_eq!(v2, 1);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
