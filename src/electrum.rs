@@ -1,8 +1,8 @@
 // electrum.rs ----------------------------------------------------------------------------------------------------------------
 
 #![allow(unused_variables)]
-#![allow(dead_code)]
-
+#![allow(dead_code)] 
+ 
 //------------------------------------------------------------------------------------------------------------------------------
 
 use std::io;
@@ -14,6 +14,275 @@ use std::ops::Deref;
 use std::sync::{Mutex, Arc, mpsc};
 use std::thread;  
 use rand::Rng;
+use std::fmt;
+
+mod test_method;
+mod test_capture;
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+struct Circle {
+    radius: i32
+}
+
+impl fmt::Display for Circle {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Circle of radius {}", self.radius)
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+// `NanoSecond` is a new name for `u64`.
+
+type NanoSecond = u64;
+type Inch = u64;
+
+//------------------------------------------------------------------------------------------------------------------------------
+// Use an attribute to silence warning.
+#[allow(non_camel_case_types)] 
+// TODO ^ Try removing the attribute
+
+fn test_alias() {
+    // `NanoSecond` = `Inch` = `u64_t` = `u64`.
+    let nanoseconds: NanoSecond = 5 as u64;
+    let inches: Inch = 2 as u64;
+
+    // Note that type aliases *don't* provide any extra type safety, because
+    // aliases are *not* new types
+    println!("{} nanoseconds + {} inches = {} unit?",
+             nanoseconds,
+             inches,
+             nanoseconds + inches);
+
+    let circle = Circle { radius: 6 };
+    println!("{}", circle.to_string());       
+
+    let parsed: i32 = "5".parse().unwrap();
+    let turbo_parsed = "10".parse::<i32>().unwrap();
+
+    let sum = parsed + turbo_parsed;
+    println!("Sum: {:?}", sum);
+
+        'outer: loop {
+        println!("Entered the outer loop");
+
+        'inner: loop {
+            println!("Entered the inner loop");
+
+            // This would break only the inner loop
+            //break;
+
+            // This breaks the outer loop
+            break 'outer;
+        }
+
+       // println!("This point will never be reached");
+    }
+
+    println!("Exited the outer loop");      
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+fn test_ptrmatch() {
+    // Assign a reference of type `i32`. The `&` signifies there
+    // is a reference being assigned.
+    let reference = &4;
+
+    match reference {
+        // If `reference` is pattern matched against `&val`, it results
+        // in a comparison like:
+        // `&i32`
+        // `&val`
+        // ^ We see that if the matching `&`s are dropped, then the `i32`
+        // should be assigned to `val`.
+        &val => println!("Got a value via destructuring: {:?}", val),
+    }
+
+    // To avoid the `&`, you dereference before matching.
+    match *reference {
+        val => println!("Got a value via dereferencing: {:?}", val),
+    }
+
+    // What if you don't start with a reference? `reference` was a `&`
+    // because the right side was already a reference. This is not
+    // a reference because the right side is not one.
+    let _not_a_reference = 3;
+
+    // Rust provides `ref` for exactly this purpose. It modifies the
+    // assignment so that a reference is created for the element; this
+    // reference is assigned.
+    let ref _is_a_reference = 3;
+
+    // Accordingly, by defining 2 values without references, references
+    // can be retrieved via `ref` and `ref mut`.
+    let value = 5;
+    let mut mut_value = 6;
+
+    // Use `ref` keyword to create a reference.
+    match value {
+        ref r => println!("Got a reference to a value: {:?}", r),
+    }
+
+    // Use `ref mut` similarly.
+    match mut_value {
+        ref mut m => {
+            // Got a reference. Gotta dereference it before we can
+            // add anything to it.
+            *m += 10;
+            println!("We added 10. `mut_value`: {:?}", m);
+        },
+    }
+}
+
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+fn match_test() {
+    let number = 13;
+    // TODO ^ Try different values for `number`
+
+    println!("Tell me about {}", number);
+    match number {
+        // Match a single value
+        1 => println!("One!"),
+        // Match several values
+        2 | 3 | 5 | 7 | 11 => println!("This is a prime"),
+        // Match an inclusive range
+        13...19 => println!("A teen"),
+        // Handle the rest of cases
+        _ => println!("Ain't special"),
+    }
+
+    let boolean = true;
+    // Match is an expression too
+    let binary = match boolean {
+        // The arms of a match must cover all the possible values
+        false => 0,
+        true => 1,
+        // TODO ^ Try commenting out one of these arms
+    };
+
+    println!("{} -> {}", boolean, binary);
+
+    struct Foo {
+        x: (u32, u32),
+        y: u32,
+    }
+
+    // Try changing the values in the struct to see what happens
+    let foo = Foo { x: (1, 2), y: 3 };
+
+    match foo {
+        Foo { x: (1, b), y } => println!("First of x is 1, b = {},  y = {} ", b, y),
+
+        // you can destructure structs and rename the variables,
+        // the order is not important
+        Foo { y: 2, x: i } => println!("y is 2, i = {:?}", i),
+
+        // and you can also ignore some variables:
+        Foo { y, .. } => println!("y = {}, we don't care about x", y),
+        // this will give an error: pattern does not mention field `x`
+        //Foo { y } => println!("y = {}", y);
+    }
+ 
+    let pair = (2, -2);
+    // TODO ^ Try different values for `pair`
+
+    println!("Tell me about {:?}", pair);
+    match pair {
+        (x, y) if x == y => println!("These are twins"),
+        // The ^ `if condition` part is a guard
+        (x, y) if x + y == 0 => println!("Antimatter, kaboom! {:?} {:?}", x, y),
+        (x, _) if x % 2 == 1 => println!("The first one is odd"),
+        _ => println!("No correlation..."),
+    }  
+
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+enum Foo {Bar, Car}
+
+fn test_iflet() -> () {
+    let a = Foo::Bar;
+
+    // Variable a matches Foo::Bar
+    if let Foo::Bar = a {
+    // ^-- this causes a compile-time error. Use `if let` instead.
+        println!("a is foobar");
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+pub struct Post {
+    state: Option<Box<dyn State>>,
+    content: String,
+}
+
+impl Post {
+    pub fn new() -> Post {
+        Post {
+            state: Some(Box::new(Draft {})),
+            content: String::new(),
+        }
+    }
+}
+
+
+impl Post {
+    // --snip--
+    pub fn approve(&mut self) {
+        if let Some(s) = self.state.take() {
+            self.state = Some(s.approve())
+        }
+    }
+}
+
+trait State {
+    fn request_review(self: Box<Self>) -> Box<dyn State>;
+    fn approve(self: Box<Self>) -> Box<dyn State>;
+}
+
+struct Draft {}
+
+impl State for Draft {
+    // --snip-
+    fn request_review(self: Box<Self>) -> Box<dyn State> {
+        self
+    }
+
+    fn approve(self: Box<Self>) -> Box<dyn State> {
+        self
+    }
+}
+
+struct PendingReview {}
+
+impl State for PendingReview {
+    // --snip--
+    fn request_review(self: Box<Self>) -> Box<dyn State> {
+        self
+    }
+    
+    fn approve(self: Box<Self>) -> Box<dyn State> {
+        Box::new(Published {})
+    }
+}
+
+struct Published {}
+
+impl State for Published {
+    fn request_review(self: Box<Self>) -> Box<dyn State> {
+        self
+    }
+
+    fn approve(self: Box<Self>) -> Box<dyn State> {
+        self
+    }
+}
+
 
 //------------------------------------------------------------------------------------------------------------------------------
 
@@ -282,11 +551,14 @@ impl<T> Deref for MyBox<T> {
         &self.0
     }
 }
+
 //------------------------------------------------------------------------------------------------------------------------------
 
 fn electrum_main( args: &Vec<String>) {
     println!("args: {:#?}", args);
 
+    test_method::test_method();
+    test_capture::test_capture();
     test_gui();
     test_thread();
 
