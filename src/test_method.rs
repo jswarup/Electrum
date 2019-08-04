@@ -1,9 +1,95 @@
 // test_method.rs ----------------------------------------------------------------------------------------------------------------
 
+use std::ops::Add;
+use std::cmp::PartialEq; 
 
- 
 //------------------------------------------------------------------------------------------------------------------------------
 
+struct A;          // Concrete type `A`.
+struct S(A);       // Concrete type `S`.
+struct SGen<T>(T); // Generic type `SGen`.
+
+fn reg_fn(_s: S) {}
+fn gen_spec_t(_s: SGen<A>) {}
+fn gen_spec_i32(_s: SGen<i32>) {}
+fn generic<T>(_s: SGen<T>) {}
+
+struct Val {
+    val: f64
+}
+
+struct GenVal<T>{
+    gen_val: T
+}
+
+// impl of Val
+impl Val {
+    fn value(&self) -> &f64 { &self.val }
+}
+
+// impl of GenVal for a generic type `T`
+impl <T> GenVal<T> {
+    fn value(&self) -> &T { &self.gen_val }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+fn test_gen1() {
+    // Using the non-generic functions
+    reg_fn(S(A));          // Concrete type.
+    gen_spec_t(SGen(A));   // Implicitly specified type parameter `A`.
+    gen_spec_i32(SGen(6)); // Implicitly specified type parameter `i32`.
+
+    // Explicitly specified type parameter `char` to `generic()`.
+    generic::<char>(SGen('a'));
+
+    // Implicitly specified type parameter `char` to `generic()`.
+    generic(SGen('c'));
+
+    let x = Val { val: 3.0 };
+    let y = GenVal { gen_val: 3i32 };
+    
+    println!("{}, {}", x.value(), y.value());
+
+
+    let mut num = 5;
+
+    let r1 = &num as *const i32;
+    let r2 = &mut num as *mut i32;
+
+    unsafe {
+        *r2 = 6;
+        println!("r1 is: {}", *r1);
+        println!("r2 is: {}", *r2);
+    }
+
+    let mut v = vec![1, 2, 3, 4, 5, 6];
+
+    let r = &mut v[..];
+    //let r1 = &mut v[..] as *mut Vec<_>;
+    let (a, b) = r.split_at_mut(3);
+
+    assert_eq!(a, &mut [1, 2, 3]);
+    assert_eq!(b, &mut [4, 5, 6]);
+
+    use std::slice;
+
+    fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
+        let len = slice.len();
+        let ptr = slice.as_mut_ptr();
+
+        assert!(mid <= len);
+
+        unsafe {
+            (slice::from_raw_parts_mut(ptr, mid),
+            slice::from_raw_parts_mut(ptr.offset(mid as isize), len - mid))
+        }
+    }
+} 
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+#[derive(Debug)]
 struct Point {
     x: f64,
     y: f64,
@@ -24,6 +110,26 @@ impl Point {
     }
 }
 
+impl Add for Point {
+    type Output = Point;
+
+    fn add(self, other: Point) -> Point {
+        Point {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+impl PartialEq for Point { 
+    fn eq(&self, other: &Point) -> bool
+    {
+        true
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+ 
 struct Rectangle {
     p1: Point,
     p2: Point,
@@ -63,6 +169,7 @@ impl Rectangle {
 
 //------------------------------------------------------------------------------------------------------------------------------
 // `Pair` owns resources: two heap allocated integers
+
 struct Pair(Box<i32>, Box<i32>);
 
 impl Pair {
@@ -81,6 +188,7 @@ impl Pair {
 //------------------------------------------------------------------------------------------------------------------------------
 
 pub fn test_method() {
+    test_gen1();
     let rectangle = Rectangle {
         // Static methods are called using double colons
         p1: Point::origin(),
@@ -97,6 +205,9 @@ pub fn test_method() {
         p1: Point::origin(),
         p2: Point::new(1.0, 1.0),
     };
+
+    let     pt3 = Point { x: 1.0, y: 0.0 } + Point { x: 2.0, y: 3.0 };
+    assert_eq!( pt3, Point { x: 3.0, y: 3.0 });
 
     // Error! `rectangle` is immutable, but this method requires a mutable
     // object
