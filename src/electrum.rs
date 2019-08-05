@@ -8,6 +8,8 @@ use rand::Rng;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
+mod test_examples;
+
 struct User {
     username: String,
     email: String,
@@ -111,6 +113,7 @@ fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
 }
 
 fn main() {
+    test_examples::test_examples();
     let  r;
 
     {
