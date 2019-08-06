@@ -2,6 +2,7 @@
 
 use std::ops::Add;
 use std::cmp::PartialEq; 
+use std::fmt;
 
 //------------------------------------------------------------------------------------------------------------------------------
 
@@ -125,6 +126,13 @@ impl PartialEq for Point {
     fn eq(&self, other: &Point) -> bool
     {
         true
+    }
+}
+
+
+impl fmt::Display for Point {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
     }
 }
 

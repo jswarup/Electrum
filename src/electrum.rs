@@ -18,6 +18,8 @@ use std::fmt;
 
 mod test_method;
 mod test_capture;
+mod test_examples;
+mod test_crypt;
 
 //------------------------------------------------------------------------------------------------------------------------------
 
@@ -556,7 +558,8 @@ impl<T> Deref for MyBox<T> {
 
 fn electrum_main( args: &Vec<String>) {
     println!("args: {:#?}", args);
-
+    test_crypt::test_crypt();
+    test_examples::test_examples();
     test_method::test_method();
     test_capture::test_capture();
     test_gui();
@@ -704,6 +707,7 @@ fn electrum_main( args: &Vec<String>) {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     electrum_main( &args);
+
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
