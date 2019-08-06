@@ -11,9 +11,17 @@
             "program": "${workspaceFolder}/target/debug/electrum.exe",
             "args": [ "-a 1 -b 1" ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/Workdir",
             "environment": [],
             "externalConsole": false
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug",
+            "program": "${workspaceFolder}/target/debug/electrum.exe",
+            "args": [],
+            "cwd": "${workspaceRoot}/Workdir"
         }
     ]
 }
